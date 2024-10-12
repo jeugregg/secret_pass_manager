@@ -2,7 +2,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdError, StdResult
 };
 
-use crate::msg::{CountResponse, CredListResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{config, config_cred, config_cred_read, config_read, Cred, State};
 
 #[entry_point]
@@ -71,10 +71,10 @@ pub fn try_add(deps: DepsMut, info: MessageInfo, credential: Cred) -> Result< Re
 
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, info: MessageInfo, msg: QueryMsg) -> StdResult<QueryResponse> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
-        QueryMsg::GetAll {} => to_binary(&get_all(deps, info)?),
+        //QueryMsg::GetAll {} => to_binary(&get_all(deps, key)?),
     }
 }
 
@@ -83,7 +83,7 @@ fn query_count(deps: Deps) -> StdResult<CountResponse> {
     Ok(CountResponse { count: state.count })
 }
 
-fn get_all(deps: Deps, _info: MessageInfo) -> StdResult<CredListResponse> {
+/* fn get_all(deps: Deps) -> StdResult<CredListResponse> {
     let sender_address = _info.sender.clone();
     let state = config_read(deps.storage).load()?;
     if sender_address != state.owner {
@@ -94,7 +94,7 @@ fn get_all(deps: Deps, _info: MessageInfo) -> StdResult<CredListResponse> {
     Ok(CredListResponse { 
         vect_cred: vec![credential]
     })
-}
+} */
 
 #[cfg(test)]
 mod tests {
@@ -123,8 +123,8 @@ mod tests {
         let res = query(
             deps.as_ref(),
             mock_env(),
-            info.clone(),
-            QueryMsg::GetCount {}).unwrap();
+            QueryMsg::GetCount {}
+        ).unwrap();
         let value: CountResponse = from_binary(&res).unwrap();
         assert_eq!(17, value.count);
     }
@@ -179,12 +179,12 @@ mod tests {
         
     
         // Retrieve and verify the saved credential
-        //let index = b"0"; // Convert the integer to a byte slice
-        //let stored_cred: Cred = config_cred(deps.as_mut().storage, index).load().unwrap();
-        let res = query(deps.as_ref(), mock_env(), info.clone(), QueryMsg::GetAll {}).unwrap();
-        let stored_cred: CredListResponse = from_binary(&res).unwrap();
+        let index = b"0"; // Convert the integer to a byte slice
+        let stored_cred: Cred = config_cred_read(deps.as_mut().storage, index).load().unwrap();
+        //let res = query(deps.as_ref(), mock_env(), info.clone(), QueryMsg::GetAll {}).unwrap();
+        //let stored_cred: CredListResponse = from_binary(&res).unwrap();
         // get first element of Vector
-        let stored_cred = stored_cred.vect_cred.first().unwrap();
+        //let stored_cred = stored_cred.vect_cred.first().unwrap();
         assert_eq!(stored_cred.name, "example_name");
         assert_eq!(stored_cred.url, "example_url");
         assert_eq!(stored_cred.email, "example_email");
@@ -249,7 +249,7 @@ mod tests {
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), exec_msg).unwrap();
 
         // should increase counter by 1
-        let res = query(deps.as_ref(), mock_env(), info.clone(), QueryMsg::GetCount {}).unwrap();
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
         let value: CountResponse = from_binary(&res).unwrap();
         assert_eq!(18, value.count);
     }
@@ -301,7 +301,7 @@ mod tests {
         let _res = execute(deps.as_mut(), mock_env(), info.clone(), exec_msg).unwrap();
 
         // should now be 5
-        let res = query(deps.as_ref(), mock_env(), info.clone(), QueryMsg::GetCount {}).unwrap();
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
         let value: CountResponse = from_binary(&res).unwrap();
         assert_eq!(5, value.count);
     }

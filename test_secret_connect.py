@@ -25,7 +25,7 @@ MODE_TEST = True
 load_dotenv()  # Load the .env file
 #   create wallet from Mnemonic into .env file using secret-sdk-python library
 mnemonic_phrase = os.getenv('MNEMONIC')
-PATH_DATA = "data"
+PATH_DATA = "contract"
 PATH_WASM = os.path.join(PATH_DATA, "contract.wasm.gz")
 
 chain_id_gitpod = "secretdev-1"

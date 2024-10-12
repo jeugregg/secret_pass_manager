@@ -30,7 +30,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     GetCount {},
-    GetAll {},
+    //GetAll {},
 }
 
 // We define a custom struct for each query response
