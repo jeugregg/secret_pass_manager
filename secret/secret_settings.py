@@ -5,9 +5,10 @@ import webbrowser
 import os
 from dotenv import load_dotenv
 import requests
+import asyncio
 # from secret_sdk.client.lcd import LCDClient
 from secret_sdk.key.mnemonic import MnemonicKey
-
+from secret_sdk.client.lcd import LCDClient
 
 # definitions
 MODE_TEST = True
@@ -70,3 +71,16 @@ def get_wallet(secret, mnemonic_phrase=MNEMONIC_PHRASE):
         response_faucet = requests.get(url_faucet)
         print(response_faucet.text)
     return wallet
+
+
+def get_client(mnemonic_phrase=MNEMONIC_PHRASE):
+    """
+    create secret client and wallet
+    """
+    # Créez une nouvelle boucle d'événements
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    # Initialisez le client
+    secret = LCDClient(chain_id=chain_id, url=node_rest_endpoint)
+    wallet = get_wallet(secret, mnemonic_phrase=mnemonic_phrase)
+    return secret, wallet

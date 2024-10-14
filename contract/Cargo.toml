@@ -33,7 +33,7 @@ thiserror = { version = "1.0" }
 cosmwasm-schema = "1.0.0"
 
 # Uncomment these for some common extra tools
-# secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.8.0" }
+secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.8.0", features = ["permit"]}
 # cw-storage-plus = { version = "1.0.1", default-features = false }
 
 # [patch.crates-io]

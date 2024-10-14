@@ -1,41 +1,24 @@
 """
-Streamlit App
-Import CSV file
-Display a table
-Display a dataframe
-DONE : - test to identify data to anoymize (replace by XXXX)
-    - save data anon
-    - undo-anon  all 
+Streamlit App : Password Manager with Secret Network Blockchain
+DONE : 
+    - interface
+    - wallet display
 TODO : 
-    - use a bool dataframe to specify if public/private instead of replace by XXXX
-    - colorize cells anonymized
-    - correct issue when undo all : coll + some values in another coll
-    - undo-anon only selected cells
+    - add password to the blockchain
+    - display passwords from the blockchain
 """
-
-import streamlit as st
-import asyncio
-import pandas as pd
 import os
+
+import pandas as pd
 import numpy as np
-from secret_sdk.client.lcd import LCDClient
-from secret.secret_settings import chain_id
-from secret.secret_settings import node_rest_endpoint
-from secret.secret_settings import get_wallet
+import streamlit as st
+
+from secret.secret_settings import get_client
 
 
 @st.cache_resource
 def get_secret_client():
-    """
-    create secret client and wallet
-    """
-    # Créez une nouvelle boucle d'événements
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    # Initialisez le client
-    secret = LCDClient(chain_id=chain_id, url=node_rest_endpoint)
-    wallet = get_wallet(secret, mnemonic_phrase=st.secrets.MNEMONIC)
-    return secret, wallet
+    return get_client(st.secrets.MNEMONIC)
 
 
 def get_balance():
@@ -44,8 +27,8 @@ def get_balance():
 
 
 # get secret ressources
+# secret, wallet = get_secret_client()
 secret, wallet = get_secret_client()
-
 # Utilisez wallet comme nécessaire
 # st.write(f"Wallet address: {wallet.key.acc_address}")
 str_print = f"Wallet connected : {wallet.key.acc_address}"
@@ -64,6 +47,9 @@ MODE_TEST = True
 
 
 def add_cred():
+    """
+    add a Credential into the blockchain
+    """
     # prepare data to be sent to secret network contract using function add_cred
     st.write(f"name : {name}")
     st.write(f"url : {url}")
@@ -72,6 +58,7 @@ def add_cred():
     st.write(f"shared_to : {shared_to}")
     st.write(f"note : {note}")
     st.session_state.add_cred_button = False
+    # TODO add to blockchain
 
 
 def click_add_cred():

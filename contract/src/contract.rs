@@ -1,6 +1,8 @@
 use cosmwasm_std::{
     entry_point, to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdError, StdResult
 };
+use secret_toolkit::permit::validate;
+use secret_toolkit::permit::Permit;
 
 use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{config, config_cred, config_cred_read, config_read, Cred, State};
