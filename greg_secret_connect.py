@@ -25,8 +25,8 @@ MODE_TEST = True
 load_dotenv()  # Load the .env file
 #   create wallet from Mnemonic into .env file using secret-sdk-python library
 mnemonic_phrase = os.getenv('MNEMONIC')
-PATH_DATA = "contract"
-PATH_WASM = os.path.join(PATH_DATA, "contract.wasm.gz")
+PATH_CONTRACT = "contract"
+PATH_WASM = os.path.join(PATH_CONTRACT, "contract.wasm.gz")
 
 chain_id_gitpod = "secretdev-1"
 node_rest_endpoint_gitpod = "https://1317-scrtlabs-gitpodlocalsec-4ogk0hk9djs.ws-us116.gitpod.io"
@@ -140,13 +140,13 @@ if tx_init.code != TxResultCode.Success.value:
 assert tx_init.code == TxResultCode.Success.value
 assert get_value_from_raw_log(
     tx_init.rawlog, 'message.action') == "/secret.compute.v1beta1.MsgInstantiateContract"
-contract_adress = get_value_from_raw_log(tx_init.rawlog, 'message.contract_address')
-assert contract_adress == tx_init.data[0].address
+contract_address = get_value_from_raw_log(tx_init.rawlog, 'message.contract_address')
+assert contract_address == tx_init.data[0].address
 
 # Execute increment : Prepare tx
 msg_execute = MsgExecuteContract(
     sender=wallet.key.acc_address,
-    contract=contract_adress,
+    contract=contract_address,
     msg={"increment": {}},
     code_hash=code_hash,
     encryption_utils=secret.encrypt_utils,
@@ -181,7 +181,7 @@ assert tx_execute_async.code == TxResultCode.Success.value
 # Query contract
 
 res = secret.wasm.contract_query(
-    contract_address=contract_adress,
+    contract_address=contract_address,
     query={"get_count": {}},
     contract_code_hash=code_hash,
 )
