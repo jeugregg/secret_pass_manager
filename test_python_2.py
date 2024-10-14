@@ -72,6 +72,12 @@ class TestSecretConnect(unittest.TestCase):
 
         assert res["count"] == count_old
 
+    def test_query_get_all(self):
+
+        msg = self.client.query_get_all()
+        print(msg)
+        assert msg is not None
+
 
 if __name__ == "__main__":
     unittest.main()

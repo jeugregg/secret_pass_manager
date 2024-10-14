@@ -1,5 +1,6 @@
 # import os
 import datetime
+import json
 # import sys
 from dotenv import load_dotenv
 from secret_sdk.core.wasm import MsgExecuteContract, MsgInstantiateContract, MsgStoreCode
@@ -7,7 +8,7 @@ from secret_sdk.core import Coins, TxResultCode
 from secret_sdk.util.tx import get_value_from_raw_log
 # from secret_sdk.protobuf.cosmos.tx.v1beta1 import BroadcastMode
 # Import only used functions from secret_settings module
-from secret.secret_settings import get_client, PATH_WASM, PATH_INFO
+from secret.secret_settings import get_client, PATH_WASM, PATH_INFO, PERMIT_NAME, PATH_PERMIT
 
 load_dotenv()
 
@@ -146,3 +147,87 @@ class Client():
         self.code_hash = tuple_[1]
         self.contract_address = tuple_[2]
         self.count = int(tuple_[3])
+
+    def msg_permit(self):
+        assert (self.contract_address is not None)
+        msg = {
+            "chain_id": self.secret.chain_id,
+            "account_number": "0",
+            "sequence": "0",
+            "fee": {
+                "amount": [{"denom": "uscrt", "amount": "0"}],  # Must be 0 uscrt
+                "gas": "1",  # Must be 1
+            },
+            "msgs": [
+                {
+                    "type": "query_permit",  # Must be "query_permit"
+                    "value": {
+                        "permit_name": PERMIT_NAME,
+                        "allowed_tokens": [self.contract_address],
+                        "permissions": [],
+                    },
+                },
+            ],
+            "memo": "",  # Must be empty
+        }
+        return msg
+
+    def signAmino(self, msg):
+        signature = self.wallet.key.sign(msg)
+        print(signature)
+        return {
+            "pub_key": {
+                "type": self.wallet.key.public_key.type_amino,
+                "value": self.wallet.key.public_key.key,
+            },
+            "signature": signature,
+        }
+
+    def query_get_all(self):
+        #
+        signature = self.wallet.key.sign(
+            bytes(
+                json.dumps(
+                    self.msg_permit(),
+                    separators=(',', ':'),
+                    sort_keys=True
+                ).encode('utf-8')
+            )
+        )
+        msg = {
+            "get_all": {
+                "wallet": self.wallet.key.acc_address,
+                "index": 0,
+                "permit": {
+                    "params": {
+                        "permit_name": PERMIT_NAME,
+                        "allowed_tokens": [self.contract_address],
+                        "chain_id": self.secret.chain_id,
+                        "permissions": [],
+                    },
+                    "signature": signature,
+                },
+            },
+        }
+        msg_save = {
+            "get_all": {
+                "wallet": self.wallet.key.acc_address,
+                "index": 0,
+                "permit": {
+                    "params": {
+                        "permit_name": PERMIT_NAME,
+                        "allowed_tokens": [self.contract_address],
+                        "chain_id": self.secret.chain_id,
+                        "permissions": [],
+                    },
+                    "signature": str(signature),
+                },
+            },
+        }
+        # save  / dump into a file permit.json for debugging purpose.
+        with open(PATH_PERMIT, "w", encoding="utf-8") as f:
+            json.dump(msg_save, f)
+
+        print(msg)
+        return msg
+        # res = self.query(msg)

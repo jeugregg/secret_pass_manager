@@ -12,13 +12,14 @@ from secret_sdk.client.lcd import LCDClient
 
 # definitions
 MODE_TEST = True
-
+PERMIT_NAME = "view_cred"
 load_dotenv()  # Load the .env file
 #   create wallet from Mnemonic into .env file using secret-sdk-python library
 MNEMONIC_PHRASE = os.getenv('MNEMONIC')
 PATH_CONTRACT = "contract"
 PATH_WASM = os.path.join(PATH_CONTRACT, "contract.wasm.gz")
 PATH_INFO = "contract_info.txt"
+PATH_PERMIT = "permit.json"
 chain_id_gitpod = "secretdev-1"
 node_rest_endpoint_gitpod = "https://1317-scrtlabs-gitpodlocalsec-4ogk0hk9djs.ws-us116.gitpod.io"
 faucet_endpoint_gitpod = "https://5000-scrtlabs-gitpodlocalsec-4ogk0hk9djs.ws-us116.gitpod.io"
@@ -36,6 +37,7 @@ else:
     chain_id = chain_id_gitpod
     node_rest_endpoint = node_rest_endpoint_gitpod
     faucet_endpoint = faucet_endpoint_gitpod
+
 
 # secret = LCDClient(chain_id=chain_id, url=node_rest_endpoint)
 # print(secret)
