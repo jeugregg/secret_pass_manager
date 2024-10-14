@@ -18,7 +18,7 @@ load_dotenv()  # Load the .env file
 MNEMONIC_PHRASE = os.getenv('MNEMONIC')
 PATH_CONTRACT = "contract"
 PATH_WASM = os.path.join(PATH_CONTRACT, "contract.wasm.gz")
-
+PATH_INFO = "contract_info.txt"
 chain_id_gitpod = "secretdev-1"
 node_rest_endpoint_gitpod = "https://1317-scrtlabs-gitpodlocalsec-4ogk0hk9djs.ws-us116.gitpod.io"
 faucet_endpoint_gitpod = "https://5000-scrtlabs-gitpodlocalsec-4ogk0hk9djs.ws-us116.gitpod.io"
