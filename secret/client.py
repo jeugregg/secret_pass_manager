@@ -1,6 +1,8 @@
 # import os
 import datetime
 import json
+import base64
+import copy
 # import sys
 from dotenv import load_dotenv
 from secret_sdk.core.wasm import MsgExecuteContract, MsgInstantiateContract, MsgStoreCode
@@ -173,7 +175,15 @@ class Client():
         return msg
 
     def signAmino(self, msg):
-        signature = self.wallet.key.sign(msg)
+        signature = self.wallet.key.sign(
+            bytes(
+                json.dumps(
+                    msg,
+                    separators=(',', ':'),
+                    sort_keys=True
+                ).encode('utf-8')
+            )
+        )
         print(signature)
         return {
             "pub_key": {
@@ -185,7 +195,7 @@ class Client():
 
     def query_get_all(self):
         #
-        signature = self.wallet.key.sign(
+        '''signature = self.wallet.key.sign(
             bytes(
                 json.dumps(
                     self.msg_permit(),
@@ -193,7 +203,10 @@ class Client():
                     sort_keys=True
                 ).encode('utf-8')
             )
-        )
+        )'''
+
+        sign_amino = self.signAmino(self.msg_permit())
+
         msg = {
             "get_all": {
                 "wallet": self.wallet.key.acc_address,
@@ -205,11 +218,19 @@ class Client():
                         "chain_id": self.secret.chain_id,
                         "permissions": [],
                     },
-                    "signature": signature,
+                    "signature": sign_amino,
                 },
             },
         }
-        msg_save = {
+        msg_save = copy.deepcopy(msg)
+        signature_save = msg_save["get_all"]["permit"]["signature"]["signature"]
+        signature_save = base64.b64encode(signature_save).decode('utf-8')
+        msg_save["get_all"]["permit"]["signature"]["signature"] = signature_save
+        pubkey_save = msg_save["get_all"]["permit"]["signature"]["pub_key"]["value"]
+        pubkey_save = base64.b64encode(pubkey_save).decode('utf-8')
+        msg_save["get_all"]["permit"]["signature"]["pub_key"]["value"] = pubkey_save
+
+        '''msg_save = {
             "get_all": {
                 "wallet": self.wallet.key.acc_address,
                 "index": 0,
@@ -223,10 +244,11 @@ class Client():
                     "signature": str(signature),
                 },
             },
-        }
+        }'''
+
         # save  / dump into a file permit.json for debugging purpose.
         with open(PATH_PERMIT, "w", encoding="utf-8") as f:
-            json.dump(msg_save, f)
+            json.dump(msg_save, f, indent=2)
 
         print(msg)
         return msg

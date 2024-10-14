@@ -1,11 +1,12 @@
+use cosmwasm_std::Addr;
 use cosmwasm_std::{
     entry_point, to_binary, Deps, DepsMut, Env, MessageInfo, QueryResponse, Response, StdError, StdResult
 };
 use secret_toolkit::permit::validate;
 use secret_toolkit::permit::Permit;
-
-use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, QueryMsg, CredListResponse};
 use crate::state::{config, config_cred, config_cred_read, config_read, Cred, State};
+use crate::state::PREFIX_REVOKED_PERMITS;
 
 #[entry_point]
 pub fn instantiate(
@@ -73,10 +74,14 @@ pub fn try_add(deps: DepsMut, info: MessageInfo, credential: Cred) -> Result< Re
 
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<QueryResponse> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
-        //QueryMsg::GetAll {} => to_binary(&get_all(deps, key)?),
+        QueryMsg::GetAll {
+            wallet,
+            permit,
+            index,
+        } => to_binary(&get_all(deps, env, wallet, permit, index)?),
     }
 }
 
@@ -85,24 +90,132 @@ fn query_count(deps: Deps) -> StdResult<CountResponse> {
     Ok(CountResponse { count: state.count })
 }
 
-/* fn get_all(deps: Deps) -> StdResult<CredListResponse> {
-    let sender_address = _info.sender.clone();
+fn get_all(
+    deps: Deps,
+    env: Env,
+    wallet: Addr,
+    permit: Permit,
+    index: u8,
+) -> StdResult<CredListResponse> {
+
+    let contract_address = env.contract.address;
+    let viewer = validate(
+        deps,
+        PREFIX_REVOKED_PERMITS,
+        &permit,
+        contract_address.to_string(),
+        None,
+    )?;
+
+    //let sender_address = _info.sender.clone();
     let state = config_read(deps.storage).load()?;
-    if sender_address != state.owner {
+
+    if wallet != state.owner {
         return Err(StdError::generic_err("Only the owner add Credential"));
     }
-    let index = b"0"; // Convert the integer to a byte slice
-    let credential = config_cred_read(deps.storage, index).load()?;
+    if viewer != state.owner {
+        return Err(StdError::generic_err("Only the owner add Credential"));
+    }
+    let index_conf = b"0"; // Convert the integer to a byte slice
+    let credential = config_cred_read(deps.storage, index_conf).load()?;
     Ok(CredListResponse { 
         vect_cred: vec![credential]
     })
-} */
+} 
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use cosmwasm_std::testing::*;
     use cosmwasm_std::{from_binary, Coin, StdError, Uint128};
+    const PATH_PERMIT: &str = "../permit.json";
+    use serde::{Deserialize, Serialize};
+    use serde_json::from_str;
+    use std::fs::read_to_string;
+
+    #[derive(Serialize, Deserialize)]
+    struct GetAllData {
+        pub wallet: Addr,
+        pub index: u8,
+        pub permit: Permit,
+    }
+    #[derive(Serialize, Deserialize)]
+    struct JsonData {
+        pub get_all: GetAllData,
+    }
+
+
+    #[test]
+    fn get_cred_all() {
+        let mut deps = mock_dependencies();
+        // load from json file on disk
+        let json_data_str = read_to_string(PATH_PERMIT).expect("Unable to read file");
+        let json_data: JsonData = from_str(&json_data_str).expect("Failed to deserialize JSON data");
+        let wallet = &json_data.get_all.wallet;
+        let index = json_data.get_all.index;
+        let permit = json_data.get_all.permit;
+        println!("wallet: {:?}", &wallet);
+        println!("index: {:?}", index);
+        println!("permit: {:?}", permit);
+
+        let info = mock_info(
+            &wallet.clone().into_string(),
+            &[Coin {
+                denom: "earth".to_string(),
+                amount: Uint128::new(1000),
+            }],
+        );
+
+        // Instantiate the contract
+        let instantiate_msg = InstantiateMsg { count: 0 };
+        let _res = instantiate(
+            deps.as_mut(), 
+            mock_env(), 
+            info.clone(), 
+            instantiate_msg
+        ).unwrap();
+
+        // Define a credential to add
+        let credential = Cred {
+            name: "example_name".to_string(),
+            url: "example_url".to_string(),
+            email: "example_email".to_string(),
+            login: "example_login".to_string(),
+            password: "example_password".to_string(),
+            note: "example_note".to_string(),
+            share: "example_share".to_string(),
+        };
+
+        // Call the try_add function
+        let execute_msg = ExecuteMsg::Add { credential: credential.clone() };
+        let _res = execute(
+            deps.as_mut(), 
+            mock_env(), 
+            info.clone(), 
+            execute_msg
+        ).unwrap();
+
+        // Verify that the credential was added successfully
+        assert_eq!(_res.messages.len(), 0);
+        
+        //let wallet = &json_data.get_all.wallet;
+        let list_cred = get_all(
+            deps.as_ref(),
+            mock_env(),
+            wallet.clone(),
+            permit,
+            index,
+        );
+
+        println!("list_cred: {:?}", list_cred);
+
+        // Verify that the credential was added successfully
+        match list_cred {
+            Err(StdError::GenericErr { .. }) => panic!("Must return unauthorized error"),
+            _ => {}
+        }
+
+    }
 
     #[test]
     fn proper_initialization() {
@@ -211,13 +324,11 @@ mod tests {
             execute_msg
         );
         
-        // Verify that the credential was added successfully
+        // Verify that the credential 
         match _res {
             Err(StdError::GenericErr { .. }) => {}
-            _ => panic!("Must return unauthorized error"),
+            _ => panic!("Must return unauthorized error")
         }
-
-              
 
     }
 
@@ -307,4 +418,5 @@ mod tests {
         let value: CountResponse = from_binary(&res).unwrap();
         assert_eq!(5, value.count);
     }
+
 }

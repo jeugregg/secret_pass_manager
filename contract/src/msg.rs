@@ -1,6 +1,7 @@
+use cosmwasm_std::Addr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
+use secret_toolkit::permit::Permit;
 use crate::state::Cred;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -30,7 +31,11 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     GetCount {},
-    //GetAll {},
+    GetAll {
+        wallet: Addr,
+        permit: Permit,
+        index: u8,
+    },
 }
 
 // We define a custom struct for each query response

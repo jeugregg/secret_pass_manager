@@ -39,3 +39,5 @@ pub fn config_cred<'a>(storage: &'a mut dyn Storage, index: &[u8]) -> Singleton<
 pub fn config_cred_read<'a>(storage: &'a dyn Storage, index: &[u8]) -> ReadonlySingleton<'a, Cred> {
     singleton_read(storage, index)
 }
+
+pub const PREFIX_REVOKED_PERMITS: &str = "revoked_permits";
