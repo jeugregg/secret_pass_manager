@@ -16,13 +16,16 @@ class Client():
     def __init__(self, mode_update=False):
         self.secret, self.wallet = get_client()
         if mode_update:
-            self.code_id = None
-            self.code_hash = None
-            self.contract_address = None
-            self.count = 0
+            self.reset()
         else:
             self.load_contract_info()
         self.balance = None
+
+    def reset(self):
+        self.code_id = None
+        self.code_hash = None
+        self.contract_address = None
+        self.count = 0
 
     def check_balance(self):
         self.balance = self.secret.bank.balance(self.wallet.key.acc_address)
@@ -38,9 +41,12 @@ class Client():
             code = wasm_file.read()
         msg_store_code = MsgStoreCode(
             sender=self.wallet.key.acc_address,
-            wasm_byte_code=code
+            wasm_byte_code=code,
+            source="",
+            builder="",
         )
-        tx_store = self.secret.tx.broadcast_sync([msg_store_code], self.wallet)
+        tx_store = self.wallet.create_and_broadcast_tx(
+            [msg_store_code], gas='4000000', gas_prices=Coins('0.25uscrt'))
         if tx_store.code != TxResultCode.Success.value:
             raise Exception(f"Failed MsgStoreCode: {tx_store.raw_log}")
         assert tx_store.code == TxResultCode.Success.value
@@ -95,7 +101,7 @@ class Client():
             contract=self.contract_address,
             msg={"increment": {}},
             code_hash=self.code_hash,
-            encryption_utils=secret.encrypt_utils,
+            encryption_utils=self.secret.encrypt_utils,
         )
         # Execute increment : Send tx
         tx_execute = self.wallet.create_and_broadcast_tx(
@@ -109,6 +115,16 @@ class Client():
         assert tx_execute.code == TxResultCode.Success.value
 
         return tx_execute
+
+    def query(self, msg):
+        assert (self.contract_address is not None)
+        assert (self.code_hash is not None)
+        res = self.secret.wasm.contract_query(
+            contract_address=self.contract_address,
+            query=msg,
+            contract_code_hash=self.code_hash,
+        )
+        return res
 
     def save_contract_info(self):
         assert (self.code_id is not None)
@@ -127,6 +143,6 @@ class Client():
         assert (tuple_[2] is not None)
         assert (tuple_[3] is not None)
         self.code_id = tuple_[0]
-        self.code_hash = tuple_[1],
+        self.code_hash = tuple_[1]
         self.contract_address = tuple_[2]
         self.count = int(tuple_[3])
