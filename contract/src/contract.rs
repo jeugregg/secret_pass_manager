@@ -165,12 +165,15 @@ mod tests {
                 amount: Uint128::new(1000),
             }],
         );
+        let mut env = mock_env();
+        let contract_address = permit.clone().params.allowed_tokens[0].clone();
+        env.contract.address = Addr::unchecked(contract_address);
 
         // Instantiate the contract
         let instantiate_msg = InstantiateMsg { count: 0 };
         let _res = instantiate(
             deps.as_mut(), 
-            mock_env(), 
+            env.clone(), 
             info.clone(), 
             instantiate_msg
         ).unwrap();
@@ -190,18 +193,18 @@ mod tests {
         let execute_msg = ExecuteMsg::Add { credential: credential.clone() };
         let _res = execute(
             deps.as_mut(), 
-            mock_env(), 
+            env.clone(), 
             info.clone(), 
             execute_msg
         ).unwrap();
 
         // Verify that the credential was added successfully
         assert_eq!(_res.messages.len(), 0);
-        
+
         //let wallet = &json_data.get_all.wallet;
         let list_cred = get_all(
             deps.as_ref(),
-            mock_env(),
+            env.clone(),
             wallet.clone(),
             permit,
             index,
