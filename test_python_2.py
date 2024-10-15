@@ -74,7 +74,7 @@ class TestSecretConnect(unittest.TestCase):
         # self.client.save_contract_info()
         res = self.client.query_get_all()
 
-        assert res["vect_cred"][0] == my_cred.to_dict()
+        assert res[0].to_dict() == my_cred.to_dict()
 
     def test_query_contract(self):
 
@@ -97,7 +97,7 @@ class TestSecretConnect(unittest.TestCase):
         res = self.client.query_get_all()
         cred_keys = Cred.mock().to_dict().keys()
         # Check if res is of type Cred
-        assert list(res["vect_cred"][0].keys()) == list(cred_keys)
+        assert isinstance(res[0], Cred)
 
 
 if __name__ == "__main__":

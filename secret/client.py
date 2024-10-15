@@ -1,4 +1,4 @@
-# import os
+import os
 import datetime
 import json
 import base64
@@ -13,11 +13,12 @@ from secret_sdk.util.tx import get_value_from_raw_log
 from secret.secret_settings import get_client, PATH_WASM, PATH_INFO, PERMIT_NAME, PATH_PERMIT
 from cred.cred import Cred
 load_dotenv()
+MNEMONIC_PHRASE = os.getenv('MNEMONIC')
 
 
 class Client():
-    def __init__(self, mode_update=False):
-        self.secret, self.wallet = get_client()
+    def __init__(self, mode_update=False, mnemonic_phrase=MNEMONIC_PHRASE):
+        self.secret, self.wallet = get_client(mnemonic_phrase)
         if mode_update:
             self.reset()
         else:
@@ -256,22 +257,5 @@ class Client():
         # query  all Cred : Prepare tx
         res = self.query(msg_save)
         print("res: ", res)
-        # msg_execute = MsgExecuteContract(
-        #     sender=self.wallet.key.acc_address,
-        #     contract=self.contract_address,
-        #     msg=msg_save,
-        #     code_hash=self.code_hash,
-        #     encryption_utils=self.secret.encrypt_utils,
-        # )
-        # Execute increment : Send tx
-        # tx_execute = self.wallet.create_and_broadcast_tx(
-        #     [msg_execute],
-        #     gas='5000000',
-        #     gas_prices=Coins('0.25uscrt'),
-        # )
-        # Execute increment : Check tx
-        # if tx_execute.code != TxResultCode.Success.value:
-        #     raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
-        # assert tx_execute.code == TxResultCode.Success.value
 
-        return res
+        return [Cred.from_dict(cred_curr) for cred_curr in res["vect_cred"]]

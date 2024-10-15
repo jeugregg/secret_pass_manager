@@ -18,7 +18,7 @@ class Cred():
 
     def __init__(
         self,
-        index=None,
+        # index=None,
         name=None,
         url=None,
         email=None,
@@ -27,7 +27,7 @@ class Cred():
         note=None,
         share=None
     ):
-        self.index = index
+        # self.index = index
         self.name = name
         self.url = url
         self.email = email
@@ -47,6 +47,19 @@ class Cred():
             'note': self.note,
             'share': self.share,
         }
+
+    @staticmethod
+    def from_dict(dict_in):
+        return Cred(
+            # index=dict_in["index"],
+            name=dict_in["name"],
+            url=dict_in["url"],
+            email=dict_in["email"],
+            login=dict_in["login"],
+            password=dict_in["password"],
+            note=dict_in["note"],
+            share=dict_in["share"]
+        )
 
     @staticmethod
     def mock():
