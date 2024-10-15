@@ -107,7 +107,7 @@ fn get_all(
         None,
     )?;
 
-    //let sender_address = _info.sender.clone();
+
     let state = config_read(deps.storage).load()?;
 
     if wallet != state.owner {

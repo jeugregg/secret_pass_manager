@@ -12,7 +12,7 @@ from secret_sdk.protobuf.cosmos.tx.v1beta1 import BroadcastMode
 # Import only used functions from secret_settings module
 from secret.secret_settings import get_client, PATH_WASM
 from secret.client import Client
-
+from cred.cred import Cred
 load_dotenv()
 
 SKIP_UPDATE_CONTRACT = True
@@ -43,18 +43,38 @@ class TestSecretConnect(unittest.TestCase):
     def test_execute_contract(self):
         if self.client.contract_address is None:
             self.client.load_contract_info()
-            # self.__class__.code_id, self.__class__.code_hash, self.__class__.contract_address, self.__class__.count = load_contract_info()
         assert (self.client.contract_address is not None)
         assert (self.client.code_hash is not None)
         # Execute increment : Prepare tx
         tx_execute = self.client.increment()
 
         if tx_execute.code != TxResultCode.Success.value:
-            raise Exception(f"Failed MsgExecuteContract: {tx_execute.raw_log}")
+            raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
         assert tx_execute.code == TxResultCode.Success.value
 
         self.client.count += 1
         self.client.save_contract_info()
+
+    def test_execute_add(self):
+        if self.client.contract_address is None:
+            self.client.load_contract_info()
+        assert (self.client.contract_address is not None)
+        assert (self.client.code_hash is not None)
+        # prepare a mock cred
+        my_cred = Cred.mock()
+
+        # Execute increment : Prepare tx
+        tx_execute = self.client.add(my_cred)
+
+        if tx_execute.code != TxResultCode.Success.value:
+            raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
+        assert tx_execute.code == TxResultCode.Success.value
+
+        # self.client.count += 1
+        # self.client.save_contract_info()
+        res = self.client.query_get_all()
+
+        assert res["vect_cred"][0] == my_cred.to_dict()
 
     def test_query_contract(self):
 
@@ -74,9 +94,10 @@ class TestSecretConnect(unittest.TestCase):
 
     def test_query_get_all(self):
 
-        msg = self.client.query_get_all()
-        print(msg)
-        assert msg is not None
+        res = self.client.query_get_all()
+        cred_keys = Cred.mock().to_dict().keys()
+        # Check if res is of type Cred
+        assert list(res["vect_cred"][0].keys()) == list(cred_keys)
 
 
 if __name__ == "__main__":

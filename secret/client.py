@@ -11,7 +11,7 @@ from secret_sdk.util.tx import get_value_from_raw_log
 # from secret_sdk.protobuf.cosmos.tx.v1beta1 import BroadcastMode
 # Import only used functions from secret_settings module
 from secret.secret_settings import get_client, PATH_WASM, PATH_INFO, PERMIT_NAME, PATH_PERMIT
-
+from cred.cred import Cred
 load_dotenv()
 
 
@@ -51,7 +51,7 @@ class Client():
         tx_store = self.wallet.create_and_broadcast_tx(
             [msg_store_code], gas='4000000', gas_prices=Coins('0.25uscrt'))
         if tx_store.code != TxResultCode.Success.value:
-            raise Exception(f"Failed MsgStoreCode: {tx_store.raw_log}")
+            raise Exception(f"Failed MsgStoreCode: {tx_store.rawlog}")
         assert tx_store.code == TxResultCode.Success.value
         self.code_id = int(get_value_from_raw_log(tx_store.rawlog, 'message.code_id'))
         code_info = self.secret.wasm.code_info(self.code_id)
@@ -80,7 +80,7 @@ class Client():
         )
         # instantiate : Check tx output
         if tx_init.code != TxResultCode.Success.value:
-            raise Exception(f"Failed MsgInstiateContract: {tx_init.raw_log}")
+            raise Exception(f"Failed MsgInstiateContract: {tx_init.rawlog}")
         assert tx_init.code == TxResultCode.Success.value
         assert get_value_from_raw_log(
             tx_init.rawlog, 'message.action') == "/secret.compute.v1beta1.MsgInstantiateContract"
@@ -114,7 +114,32 @@ class Client():
         )
         # Execute increment : Check tx
         if tx_execute.code != TxResultCode.Success.value:
-            raise Exception(f"Failed MsgExecuteContract: {tx_execute.raw_log}")
+            raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
+        assert tx_execute.code == TxResultCode.Success.value
+
+        return tx_execute
+
+    def add(self, cred: Cred):
+        self.check_balance()
+        assert (self.code_hash is not None)
+        assert (self.contract_address is not None)
+        # Execute increment : Prepare tx
+        msg_execute = MsgExecuteContract(
+            sender=self.wallet.key.acc_address,
+            contract=self.contract_address,
+            msg={"add": {"credential": cred.to_dict()}},
+            code_hash=self.code_hash,
+            encryption_utils=self.secret.encrypt_utils,
+        )
+        # Execute increment : Send tx
+        tx_execute = self.wallet.create_and_broadcast_tx(
+            [msg_execute],
+            gas='5000000',
+            gas_prices=Coins('0.25uscrt'),
+        )
+        # Execute increment : Check tx
+        if tx_execute.code != TxResultCode.Success.value:
+            raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
         assert tx_execute.code == TxResultCode.Success.value
 
         return tx_execute
@@ -194,16 +219,9 @@ class Client():
         }
 
     def query_get_all(self):
-        #
-        '''signature = self.wallet.key.sign(
-            bytes(
-                json.dumps(
-                    self.msg_permit(),
-                    separators=(',', ':'),
-                    sort_keys=True
-                ).encode('utf-8')
-            )
-        )'''
+        self.check_balance()
+        assert (self.code_hash is not None)
+        assert (self.contract_address is not None)
 
         sign_amino = self.signAmino(self.msg_permit())
 
@@ -230,26 +248,30 @@ class Client():
         pubkey_save = base64.b64encode(pubkey_save).decode('utf-8')
         msg_save["get_all"]["permit"]["signature"]["pub_key"]["value"] = pubkey_save
 
-        '''msg_save = {
-            "get_all": {
-                "wallet": self.wallet.key.acc_address,
-                "index": 0,
-                "permit": {
-                    "params": {
-                        "permit_name": PERMIT_NAME,
-                        "allowed_tokens": [self.contract_address],
-                        "chain_id": self.secret.chain_id,
-                        "permissions": [],
-                    },
-                    "signature": str(signature),
-                },
-            },
-        }'''
-
         # save  / dump into a file permit.json for debugging purpose.
         with open(PATH_PERMIT, "w", encoding="utf-8") as f:
             json.dump(msg_save, f, indent=2)
 
-        print(msg)
-        return msg
-        # res = self.query(msg)
+        print("msg: ", msg)
+        # query  all Cred : Prepare tx
+        res = self.query(msg_save)
+        print("res: ", res)
+        # msg_execute = MsgExecuteContract(
+        #     sender=self.wallet.key.acc_address,
+        #     contract=self.contract_address,
+        #     msg=msg_save,
+        #     code_hash=self.code_hash,
+        #     encryption_utils=self.secret.encrypt_utils,
+        # )
+        # Execute increment : Send tx
+        # tx_execute = self.wallet.create_and_broadcast_tx(
+        #     [msg_execute],
+        #     gas='5000000',
+        #     gas_prices=Coins('0.25uscrt'),
+        # )
+        # Execute increment : Check tx
+        # if tx_execute.code != TxResultCode.Success.value:
+        #     raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
+        # assert tx_execute.code == TxResultCode.Success.value
+
+        return res
