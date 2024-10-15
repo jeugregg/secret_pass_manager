@@ -67,7 +67,7 @@ def add_cred(my_cred):
 
 def update_cred(index, my_cred):
     """
-    update a Credential into the blockchain
+    Update a Credential into the blockchain
     """
     # prepare data to be sent to secret network contract using function add_cred
     with st.sidebar:
@@ -88,6 +88,7 @@ def update_cred(index, my_cred):
                 assert tx_execute.code == TxResultCode.Success.value
                 st.success("Credential updated to blockchain")
                 status.update(label="Credential updated!", state="complete", expanded=False)
+                st.session_state.list_cred[index] = my_cred
             else:
                 st.warning("Nothing to Update!")
                 status.update(label="Nothing to Update!", state="complete", expanded=False)
@@ -111,6 +112,7 @@ def load_cred():
 
 
 load_cred()
+
 
 if "list_cred" in st.session_state:
     list_cred = st.session_state.list_cred
@@ -136,74 +138,119 @@ def click_update_cred(index):
     st.session_state.update_cred_button = True
 
 
-st.title("List credentials")
+# st.title("List credentials")
+# for i_row, cred in enumerate(list_cred):
+
+#     with st.popover(cred.name or cred.url):
+#         st.markdown("Details:")
+#         with st.form(key=f'update_cred_{i_row}'):
+#             my_cred_update = Cred.mock()
+#             my_cred_update.name = st.text_input("name", cred.name)
+#             my_cred_update.url = st.text_input("url", cred.url)
+#             my_cred_update.email = st.text_input("email", cred.email)
+#             my_cred_update.login = st.text_input("login", cred.login)
+#             my_cred_update.password = st.text_input(
+#                 "password", value=cred.password, type="password")
+#             my_cred_update.note = st.text_area("note", cred.note)
+#             my_cred_update.share = st.text_input("share", cred.share)
+
+#             update_cred_button = st.form_submit_button(
+#                 label="Update",
+#                 on_click=click_update_cred,
+#                 args=(i_row,),
+#             )
+#             # add a cancel button
+#             cancel_update_cred_button = st.form_submit_button(
+#                 label="Cancel",
+#                 type="primary",
+#             )
+# if cancel_update_cred_button:
+#     load_cred()
+# # Display Updating Cred
+# if st.session_state.update_cred_button:
+#     st.session_state.my_cred_update = my_cred_update
+#     update_cred(st.session_state.update_index, st.session_state.my_cred_update)
+
+
+def update_credential(index, my_cred):
+    with st.form(key=f'update_form_{index}', clear_on_submit=True):
+        my_cred_update = Cred.mock()
+        my_cred_update.name = st.text_input("name",  my_cred.name)
+        my_cred_update.url = st.text_input("url",  my_cred.url)
+        my_cred_update.email = st.text_input("email",  my_cred.email)
+        my_cred_update.login = st.text_input("login",  my_cred.login)
+        my_cred_update.password = st.text_input(
+            "password", value=my_cred.password, type="password")
+        my_cred_update.note = st.text_area("note",  my_cred.note)
+        my_cred_update.share = st.text_input("share",  my_cred.share)
+
+        if st.form_submit_button(label="Update"):
+            update_cred(index, my_cred_update)
+            st.success("Credential updated to blockchain")
+            st.rerun()
+
+
+@st.dialog("Update Credential")
+def dialog(my_cred):
+    index = st.session_state.update_index
+    update_credential(index, my_cred)
+
+
+st.title("Secret Password Manager")
+
+st.subheader("List credentials")
 for i_row, cred in enumerate(list_cred):
+    with st.container(border=True):
+        with st.container():
+            col1, col2 = st.columns([3, 1])
 
-    with st.popover(cred.name or cred.url):
-        st.markdown("Details:")
-        with st.form(key=f'update_cred_{i_row}'):
-            my_cred_update = Cred.mock()
-            my_cred_update.name = st.text_input("name", cred.name)
-            my_cred_update.url = st.text_input("url", cred.url)
-            my_cred_update.email = st.text_input("email", cred.email)
-            my_cred_update.login = st.text_input("login", cred.login)
-            my_cred_update.password = st.text_input(
-                "password", value=cred.password, type="password")
-            my_cred_update.note = st.text_area("note", cred.note)
-            my_cred_update.share = st.text_input("share", cred.share)
+            # Display credential details
+            with col1:
+                st.markdown(f"**Name**: {cred.name}")
+                st.markdown(f"**URL**: {cred.url}")
 
-            update_cred_button = st.form_submit_button(
-                label="Update",
-                on_click=click_update_cred,
-                args=(i_row,),
-            )
-            # add a cancel button
-            cancel_update_cred_button = st.form_submit_button(
-                label="Cancel",
-                type="primary",
-            )
+            # Add button to update this credential
+            with col2:
+                if st.button("Edit", key=f'update_button_{i_row}'):
+                    st.session_state.update_index = i_row
+                    dialog(st.session_state.list_cred[i_row])
 
 
-if cancel_update_cred_button:
-    load_cred()
-# Display Updating Cred
-if st.session_state.update_cred_button:
-    st.session_state.my_cred_update = my_cred_update
-    update_cred(st.session_state.update_index, st.session_state.my_cred_update)
-
+# ADD CRED
 
 def click_add_cred():
     st.session_state.add_cred_button = True
 
 
 # Add Cred Form to input information about your login creadentials
-st.title("Add credentials")
-with st.form(key='add_cred', clear_on_submit=True):
-    name = st.text_input("name")
-    url = st.text_input("url")
-    email = st.text_input("email")
-    login = st.text_input("login")
-    password = st.text_input("password", type="password")
-    note = st.text_area("note")
-    share = st.text_input("share")
+with st.container(border=True):
+    st.subheader("Add credentials")
+    with st.form(key='add_cred', clear_on_submit=True):
+        name = st.text_input("name")
+        url = st.text_input("url")
+        email = st.text_input("email")
+        login = st.text_input("login")
+        password = st.text_input("password", type="password")
+        note = st.text_area("note")
+        share = st.text_input("share")
 
-    # create my new credential to add
-    cred_to_add = Cred(
-        name=name,
-        url=url,
-        email=email,
-        login=login,
-        password=password,
-        note=note,
-        share=share,
-    )
-    # add to session state cred_to_add
-    st.session_state.cred_to_add = cred_to_add
-    # add a button to save the credentials
-    add_cred_button = st.form_submit_button(
-        label="Save",
-        on_click=click_add_cred,
-    )
+        # create my new credential to add
+        cred_to_add = Cred(
+            name=name,
+            url=url,
+            email=email,
+            login=login,
+            password=password,
+            note=note,
+            share=share,
+        )
+        # add to session state cred_to_add
+        st.session_state.cred_to_add = cred_to_add
+        # add a button to save the credentials
+        add_cred_button = st.form_submit_button(
+            label="Save",
+            on_click=click_add_cred,
+        )
 
 if "add_cred_button" not in st.session_state:
     st.session_state.add_cred_button = False
@@ -216,3 +263,5 @@ if st.session_state.add_cred_button:
     else:
         st.warning("All fields are not filled, Proceeding anyway...")
         add_cred(cred_to_add)
+
+st.caption("MIT license, Source: https://github.com/jeugregg/secret_pass_manager ")
