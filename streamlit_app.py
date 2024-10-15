@@ -46,23 +46,23 @@ def add_cred(my_cred):
     """
     # prepare data to be sent to secret network contract using function add_cred
     with st.sidebar:
-        st.title("Saving to BC")
-        st.write(f"name : {my_cred.name}")
-        st.write(f"url : {my_cred.url}")
-        st.write(f"email : {my_cred.email}")
-        st.write(f"login : {my_cred.login}")
-        st.write("password : ****")
-        st.write(f"note : {my_cred.note}")
-        st.write(f"shared_to : {my_cred.share}")
-        # st.session_state.add_cred_button = False
-        # TODO add to blockchain
-        with st.spinner('Add Credential...'):
-            tx_execute = client.add(my_cred)
-            if tx_execute.code != TxResultCode.Success.value:
-                raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
-            assert tx_execute.code == TxResultCode.Success.value
-            # TODO update list_cred in session state
-            st.success("Credential added to blockchain")
+        with st.status("Adding...", expanded=True) as status:
+            st.write(f"name : {my_cred.name}")
+            st.write(f"url : {my_cred.url}")
+            st.write(f"email : {my_cred.email}")
+            st.write(f"login : {my_cred.login}")
+            st.write("password : ****")
+            st.write(f"note : {my_cred.note}")
+            st.write(f"shared_to : {my_cred.share}")
+            # add to BC
+            with st.spinner('Adding Credential...'):
+                tx_execute = client.add(my_cred)
+                if tx_execute.code != TxResultCode.Success.value:
+                    raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
+                assert tx_execute.code == TxResultCode.Success.value
+                # TODO update list_cred in session state
+                st.success("Credential added to blockchain")
+                status.update(label="Credential added!", state="complete", expanded=False)
 
 
 def update_cred(index, my_cred):
@@ -80,9 +80,9 @@ def update_cred(index, my_cred):
             st.write(f"note : {my_cred.note}")
             st.write(f"share : {my_cred.share}")
             if my_cred.to_dict() != st.session_state.list_cred[index].to_dict():
+                # Update to BC
                 with st.spinner('Updating Credential...'):
                     tx_execute = client.add(my_cred)
-
                 if tx_execute.code != TxResultCode.Success.value:
                     raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
                 assert tx_execute.code == TxResultCode.Success.value
@@ -247,21 +247,28 @@ with st.container(border=True):
         # add to session state cred_to_add
         st.session_state.cred_to_add = cred_to_add
         # add a button to save the credentials
-        add_cred_button = st.form_submit_button(
-            label="Save",
-            on_click=click_add_cred,
-        )
+        # add_cred_button = st.form_submit_button(
+        #     label="Save",
+        #     on_click=click_add_cred,
+        # )
+        if st.form_submit_button(label="Add"):
+            # update_cred(index, my_cred_update)
+            add_cred(cred_to_add)
+            st.success("Credential Added to blockchain")
+            st.rerun()
 
-if "add_cred_button" not in st.session_state:
-    st.session_state.add_cred_button = False
 
-# Display Adding Cred
-if st.session_state.add_cred_button:
-    cred_to_add = st.session_state.cred_to_add
-    if cred_to_add.name and cred_to_add.url and cred_to_add.login and cred_to_add.password:
-        add_cred(cred_to_add)
-    else:
-        st.warning("All fields are not filled, Proceeding anyway...")
-        add_cred(cred_to_add)
+# if "add_cred_button" not in st.session_state:
+#     st.session_state.add_cred_button = False
+
+# # Display Adding Cred
+# if st.session_state.add_cred_button:
+#     cred_to_add = st.session_state.cred_to_add
+#     if cred_to_add.name and cred_to_add.url and cred_to_add.login and cred_to_add.password:
+#         add_cred(cred_to_add)
+#     else:
+#         st.warning("All fields are not filled, Proceeding anyway...")
+#         add_cred(cred_to_add)
+
 
 st.caption("MIT license, Source: https://github.com/jeugregg/secret_pass_manager ")
