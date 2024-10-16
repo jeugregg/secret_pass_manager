@@ -38,6 +38,7 @@ def update_sidebar_balance():
     with st.spinner('Calculating balance...'):
         balance = get_balance()
     st.write(f"Balance: {balance[0]}")
+    st.caption(f"Website faucet: {Client.get_url_faucet()}")
     st.session_state.balance = balance
 
 
@@ -163,6 +164,8 @@ with st.sidebar:
         st.session_state.tx_add = initial_tx_status()
     # UPDATE check status
     elif st.session_state.tx_update["update"]:
+        update_cred(st.session_state.tx_add["index"], st.session_state.tx_add["my_cred_update"])
+        # st.success("Credential updated to blockchain")
         with st.status("Last Tx") as status:
             if st.session_state.tx_update["tx"] is not None:
                 st.write(Client.get_url_tx(st.session_state.tx_update["tx"].txhash))
@@ -258,8 +261,11 @@ def update_credential(index, my_cred):
         my_cred_update.share = st.text_input("share",  my_cred.share)
 
         if st.form_submit_button(label="Update"):
-            update_cred(index, my_cred_update)
-            st.success("Credential updated to blockchain")
+            st.session_state.tx_add["index"] = index
+            st.session_state.tx_add["my_cred_update"] = my_cred_update
+            st.session_state.tx_update["update"] = True
+            # update_cred(index, my_cred_update)
+            # st.success("Credential updated to blockchain")
             st.rerun()
 
 
