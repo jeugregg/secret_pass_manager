@@ -1,20 +1,16 @@
 class Cred():
-    '''
-        'name': name,
-        'url': url,
-        'username': username,
-        'password': password,
-        'shared_to': shared_to,
-        'note': note,
+    """
+    A class representing a credential with various attributes.
 
-            name: "example_name".to_string(),
-            url: "example_url".to_string(),
-            email: "example_email".to_string(),
-            login: "example_login".to_string(),
-            password: "example_password".to_string(),
-            note: "example_note".to_string(),
-            share: "example_share".to_string(),
-        '''
+    Attributes:
+        name (str): The name of the credential.
+        url (str): The URL associated with the credential.
+        email (str): The email address related to the credential.
+        login (str): The login username or identifier.
+        password (str): The password for the credential.
+        note (str): Additional notes about the credential.
+        share (str): Information on who the credential is shared with.
+    """
 
     def __init__(
         self,
@@ -27,6 +23,22 @@ class Cred():
         note=None,
         share=None
     ):
+        """
+        Initializes a new Cred object.
+
+        Args:
+            # index: The index of the credential (optional).
+            name: The name of the credential.
+            url: The URL associated with the credential.
+            email: The email address related to the credential.
+            login: The login username or identifier.
+            password: The password for the credential.
+            note: Additional notes about the credential.
+            share: Information on who the credential is shared with.
+
+        Returns:
+            A new Cred object.
+        """
         # self.index = index
         self.name = name
         self.url = url
@@ -37,6 +49,12 @@ class Cred():
         self.share = share
 
     def to_dict(self):
+        """
+        Converts the Cred object to a dictionary.
+
+        Returns:
+            A dictionary representation of the Cred object.
+        """
         return {
             # 'index': self.index,
             'name': self.name,
@@ -49,6 +67,12 @@ class Cred():
         }
 
     def isempty(self):
+        """
+        Checks if the Cred object has all attributes empty.
+
+        Returns:
+            True if all attributes are empty, False otherwise.
+        """
         isempty = (len(self.name) == 0)
         isempty &= (len(self.url) == 0)
         isempty &= (len(self.email) == 0)
@@ -60,6 +84,15 @@ class Cred():
 
     @staticmethod
     def from_dict(dict_in):
+        """
+        Creates a Cred object from a dictionary.
+
+        Args:
+            dict_in: The input dictionary containing the attributes of the credential.
+
+        Returns:
+            A new Cred object initialized with the values from the dictionary.
+        """
         return Cred(
             # index=dict_in["index"],
             name=dict_in["name"],
@@ -73,6 +106,12 @@ class Cred():
 
     @staticmethod
     def mock():
+        """
+        Creates a mock Cred object with example values.
+
+        Returns:
+            A new Cred object with pre-filled attributes for testing purposes.
+        """
         return Cred(
             # index=1,
             name="example_name",

@@ -15,7 +15,20 @@ MNEMONIC_PHRASE = os.getenv('MNEMONIC')
 
 
 class Client():
+    """
+    A client class used to interact with a blockchain wallet using a mnemonic phrase.
+
+    TODO : add python support to Keplr wallet extension
+    """
+
     def __init__(self, mode_update=False, mnemonic_phrase=MNEMONIC_PHRASE):
+        """
+        Initialize the Client object.
+
+        Args:
+            mode_update (bool): Flag indicating if the client is in update mode => create new vault contract 
+            mnemonic_phrase (str): The mnemonic phrase used for wallet creation. Defaults to the environment variable MNEMONIC.
+        """
         self.secret, self.wallet = get_client(mnemonic_phrase)
         if mode_update:
             self.reset()
@@ -24,21 +37,45 @@ class Client():
         self.balance = None
 
     def reset(self):
+        """
+        Reset the client's state by clearing code_id and code_hash.
+        """
         self.code_id = None
         self.code_hash = None
         self.contract_address = None
         self.count = 0
 
     def check_balance(self):
+        """
+        Check the balance of the wallet and assert that it has a positive amount.
+
+        Returns:
+            dict: The balance information.
+
+        Raises:
+            AssertionError: If no balance is found.
+        """
         self.balance = self.secret.bank.balance(self.wallet.key.acc_address)
         assert self.balance[0].get("uscrt").amount > 0, "No balance found"
         return self.balance
 
     def get_balance(self):
+        """
+        Get the current balance of the wallet.
+
+        Returns:
+            dict: The balance information.
+        """
         self.balance = self.secret.bank.balance(self.wallet.key.acc_address)
         return self.balance
 
     def store_code(self):
+        """
+        Store a smart contract code on the blockchain.
+
+        Raises:
+            FileNotFoundError: If the WASM file is not found.
+        """
         with open(PATH_WASM, 'rb') as wasm_file:
             code = wasm_file.read()
         msg_store_code = MsgStoreCode(
@@ -59,6 +96,12 @@ class Client():
         return tx_store
 
     def instantiate(self):
+        """
+        Store a smart contract code on the blockchain.
+
+        Raises:
+            FileNotFoundError: If the WASM file is not found.
+        """
         self.check_balance()
         assert (self.code_id is not None)
         assert (self.code_hash is not None)
@@ -88,11 +131,23 @@ class Client():
         return tx_init
 
     def create_contract(self):
+        """
+        Create a smart contract by storing the code and instantiating it.
+
+        Raises:
+            Exception: If the creation fails.
+        """
         self.store_code()
         self.instantiate()
         self.save_contract_info()
 
     def increment(self):
+        """
+        Check the balance before performing an operation on the contract.
+
+        Raises:
+            AssertionError: If the balance is insufficient.
+        """
         self.check_balance()
         assert (self.code_id is not None)
         assert (self.code_hash is not None)
@@ -119,6 +174,18 @@ class Client():
         return tx_execute
 
     def add(self, cred: Cred):
+        """
+        Add a credential to the smart contract and check the balance.
+
+        Args:
+            cred (Cred): The credential to be added.
+
+        Returns:
+            dict: The transaction result.
+
+        Raises:
+            AssertionError: If the balance is insufficient or if the code hash or contract address is missing.
+        """
         self.check_balance()
         assert (self.code_hash is not None)
         assert (self.contract_address is not None)
@@ -144,6 +211,18 @@ class Client():
         return tx_execute
 
     def query(self, msg):
+        """
+        Query the smart contract with a given message and check the balance.
+
+        Args:
+            msg (dict): The message to be queried.
+
+        Returns:
+            dict: The query result.
+
+        Raises:
+            AssertionError: If the code hash or contract address is missing.
+        """
         assert (self.contract_address is not None)
         assert (self.code_hash is not None)
         res = self.secret.wasm.contract_query(
@@ -154,6 +233,12 @@ class Client():
         return res
 
     def save_contract_info(self):
+        """
+        Save the smart contract information to a file.
+
+        Raises:
+            AssertionError: If any of the required information is missing.
+        """
         assert (self.code_id is not None)
         assert (self.code_hash is not None)
         assert (self.contract_address is not None)
@@ -162,6 +247,12 @@ class Client():
             f.write(f"{self.code_id}\n{self.code_hash}\n{self.contract_address}\n{self.count}\n")
 
     def load_contract_info(self):
+        """
+        Load the smart contract information from a file.
+
+        Raises:
+            AssertionError: If any of the required information is missing.
+        """
         with open(PATH_INFO, "r", encoding="utf-8") as f:
             tuple_ = [line.strip() for line in f.readlines()]
         assert (tuple_ is not None)
@@ -175,6 +266,16 @@ class Client():
         self.count = int(tuple_[3])
 
     def msg_permit(self):
+        """
+        Generate a message to query a permit for the given contract address.
+
+        This method constructs a Cosmos SDK transaction message with specific parameters
+        to request a permit. The permit is used to authorize interactions with the specified
+        smart contract on the Secret Network.
+
+        Returns:
+            dict: A dictionary representing the transaction message.
+        """
         assert (self.contract_address is not None)
         msg = {
             "chain_id": self.secret.chain_id,
@@ -199,6 +300,16 @@ class Client():
         return msg
 
     def signAmino(self, msg):
+        """
+        Sign the given message using the wallet's private key and 
+          return a dictionary containing the public key and signature.
+
+        Args:
+            msg: The message to be signed.
+
+        Returns:
+            A dictionary with keys 'pub_key' and 'signature'.
+        """
         signature = self.wallet.key.sign(
             bytes(
                 json.dumps(
@@ -218,6 +329,12 @@ class Client():
         }
 
     def query_get_all(self):
+        """
+        Query all Cred using a prepared message and handle the response.
+
+        Returns:
+            A list of Cred objects retrieved from the query response.
+        """
         self.check_balance()
         assert (self.code_hash is not None)
         assert (self.contract_address is not None)
@@ -260,8 +377,23 @@ class Client():
 
     @staticmethod
     def get_url_tx(tx_hash):
+        """
+        Get the URL for a given transaction hash.
+
+        Args:
+            tx_hash (str): The transaction hash to generate the URL for.
+
+        Returns:
+            str: The URL of the transaction on the blockchain explorer.
+        """
         return f"{explorer_endpoint}{tx_hash}"
 
     @staticmethod
     def get_url_faucet():
+        """
+        Get the URL of the faucet.
+
+        Returns:
+            str: The URL of the faucet where users can request tokens.
+        """
         return faucet_endpoint
