@@ -10,7 +10,7 @@ from secret_sdk.core import Coins, TxResultCode
 from secret_sdk.util.tx import get_value_from_raw_log
 # from secret_sdk.protobuf.cosmos.tx.v1beta1 import BroadcastMode
 # Import only used functions from secret_settings module
-from secret.secret_settings import get_client, PATH_WASM, PATH_INFO, PERMIT_NAME, PATH_PERMIT
+from secret.secret_settings import get_client, PATH_WASM, PATH_INFO, PERMIT_NAME, PATH_PERMIT, explorer_endpoint
 from cred.cred import Cred
 load_dotenv()
 MNEMONIC_PHRASE = os.getenv('MNEMONIC')
@@ -259,3 +259,7 @@ class Client():
         print("res: ", res)
 
         return [Cred.from_dict(cred_curr) for cred_curr in res["vect_cred"]]
+
+    @staticmethod
+    def get_url_tx(tx_hash):
+        return f"{explorer_endpoint}{tx_hash}"

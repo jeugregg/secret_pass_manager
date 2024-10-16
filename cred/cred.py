@@ -48,6 +48,16 @@ class Cred():
             'share': self.share,
         }
 
+    def isempty(self):
+        isempty = (len(self.name) == 0)
+        isempty &= (len(self.url) == 0)
+        isempty &= (len(self.email) == 0)
+        isempty &= (len(self.login) == 0)
+        isempty &= (len(self.password) == 0)
+        isempty &= (len(self.note) == 0)
+        isempty &= (len(self.share) == 0)
+        return isempty
+
     @staticmethod
     def from_dict(dict_in):
         return Cred(

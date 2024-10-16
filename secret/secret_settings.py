@@ -23,20 +23,23 @@ PATH_PERMIT = "permit.json"
 chain_id_gitpod = "secretdev-1"
 node_rest_endpoint_gitpod = "https://1317-scrtlabs-gitpodlocalsec-4ogk0hk9djs.ws-us116.gitpod.io"
 faucet_endpoint_gitpod = "https://5000-scrtlabs-gitpodlocalsec-4ogk0hk9djs.ws-us116.gitpod.io"
+explorer_endpoint_gitpod = "TO BE UPDATED"
 
 chain_id_test = "pulsar-3"
 node_rest_endpoint_test = "https://api.pulsar.scrttestnet.com"
 faucet_endpoint_test = "https://faucet.pulsar.scrttestnet.com"
-
+explorer_endpoint_test = "https://testnet.ping.pub/secret/tx/"
 
 if MODE_TEST:
     chain_id = chain_id_test
     node_rest_endpoint = node_rest_endpoint_test
     faucet_endpoint = faucet_endpoint_test
+    explorer_endpoint = explorer_endpoint_test
 else:
     chain_id = chain_id_gitpod
     node_rest_endpoint = node_rest_endpoint_gitpod
     faucet_endpoint = faucet_endpoint_gitpod
+    explorer_endpoint = explorer_endpoint_gitpod
 
 
 # secret = LCDClient(chain_id=chain_id, url=node_rest_endpoint)
