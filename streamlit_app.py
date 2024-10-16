@@ -130,7 +130,7 @@ if st.session_state.get("tx_update") is None:
 
 # siderbar
 with st.sidebar:
-    st.header("Secret Password Manager")
+    st.title("Secret Password Manager")
     st.divider()
     # Connect to wallet
     client = get_secret_client()
