@@ -69,6 +69,13 @@ def add_cred(my_cred):
             st.session_state.tx_add["update"] = True
             st.session_state.tx_add["status"] = "Credential added!"
             st.session_state.tx_add["tx"] = tx_execute
+            if st.session_state.tx_add["tx"] is not None:
+                st.write(Client.get_url_tx(st.session_state.tx_add["tx"].txhash))
+            status.update(
+                label=st.session_state.tx_add["status"],
+                state="complete",
+                expanded=True,
+            )
 
 
 def update_cred(index, my_cred):
@@ -143,14 +150,15 @@ with st.sidebar:
     st.divider()
     # ADD check status
     if st.session_state.tx_add["update"]:
-        with st.status("Last Tx") as status:
-            if st.session_state.tx_add["tx"] is not None:
-                st.write(Client.get_url_tx(st.session_state.tx_add["tx"].txhash))
-            status.update(
-                label=st.session_state.tx_add["status"],
-                state="complete",
-                expanded=True,
-            )
+        add_cred(st.session_state.tx_add["cred_to_add"])
+        # with st.status("Last Tx") as status:
+        #     if st.session_state.tx_add["tx"] is not None:
+        #         st.write(Client.get_url_tx(st.session_state.tx_add["tx"].txhash))
+        #     status.update(
+        #         label=st.session_state.tx_add["status"],
+        #         state="complete",
+        #         expanded=True,
+        #     )
         # re-init
         st.session_state.tx_add = initial_tx_status()
     # UPDATE check status
@@ -333,12 +341,15 @@ def display_add_cred():
             # )
             if st.form_submit_button(label="Add", type="primary"):
                 # update_cred(index, my_cred_update)
-
+                st.session_state.tx_add["update"] = True
+                st.session_state.tx_add["cred_to_add"] = cred_to_add
                 if cred_to_add.isempty():
                     st.warning("No fields is filled")
+                    st.session_state.tx_add["cred_to_add"] = None
                 else:
-                    add_cred(cred_to_add)
-                    st.success("Credential Added to blockchain")
+                    st.session_state.tx_add["cred_to_add"] = cred_to_add
+                    # add_cred(cred_to_add)
+                    # st.success("Credential Added to blockchain")
                 st.session_state.expanded = False
                 st.rerun()
 
