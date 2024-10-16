@@ -7,21 +7,10 @@ TODO :
     - add password to the blockchain
     - display passwords from the blockchain
 """
-import os
-
-import pandas as pd
-import numpy as np
 import streamlit as st
-from secret_sdk.core import Coins, TxResultCode
-# from secret.secret_settings import get_client
+from secret_sdk.core import TxResultCode
 from secret.client import Client
 from cred.cred import Cred
-
-
-# definitions
-PATH_DATA = "data"
-# constants
-MODE_TEST = True
 
 
 @st.cache_resource
@@ -57,13 +46,11 @@ def add_cred(my_cred):
             st.write("password : ****")
             st.write(f"note : {my_cred.note}")
             st.write(f"shared_to : {my_cred.share}")
-            # add to BC
-            # with st.spinner('Adding Credential...'):
+            # add to blockchain
             tx_execute = client.add(my_cred)
             if tx_execute.code != TxResultCode.Success.value:
                 raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
             assert tx_execute.code == TxResultCode.Success.value
-            # TODO update list_cred in session state
             st.success("Credential added to blockchain")
             status.update(label="Credential added!", state="complete", expanded=False)
             # status
@@ -94,7 +81,7 @@ def update_cred(index, my_cred):
             st.write(f"note : {my_cred.note}")
             st.write(f"share : {my_cred.share}")
             if my_cred.to_dict() != st.session_state.list_cred[index].to_dict():
-                # Update to BC
+                # Update to blockchain
                 with st.spinner('Updating Credential...'):
                     tx_execute = client.add(my_cred)
                 if tx_execute.code != TxResultCode.Success.value:
@@ -143,10 +130,6 @@ def dialog_create_vault():
 
 if st.session_state.get("tx_add") is None:
     st.session_state.tx_add = initial_tx_status()
-    # st.session_state.tx_add = dict()
-    # st.session_state.tx_add["update"] = False
-    # st.session_state.tx_add["status"] = ""
-    # st.session_state.tx_add["tx"] = None
 
 if st.session_state.get("tx_update") is None:
     st.session_state.tx_update = initial_tx_status()
@@ -180,30 +163,11 @@ with st.sidebar:
     # ADD check status
     if st.session_state.tx_add["update"]:
         add_cred(st.session_state.tx_add["cred_to_add"])
-        # with st.status("Last Tx") as status:
-        #     if st.session_state.tx_add["tx"] is not None:
-        #         st.write(Client.get_url_tx(st.session_state.tx_add["tx"].txhash))
-        #     status.update(
-        #         label=st.session_state.tx_add["status"],
-        #         state="complete",
-        #         expanded=True,
-        #     )
         # re-init
         st.session_state.tx_add = initial_tx_status()
     # UPDATE check status
     elif st.session_state.tx_update["update"]:
         update_cred(st.session_state.tx_add["index"], st.session_state.tx_add["my_cred_update"])
-        # st.success("Credential updated to blockchain")
-        # with st.status("Last Tx") as status:
-        #     if st.session_state.tx_update["tx"] is not None:
-        #         st.write(Client.get_url_tx(st.session_state.tx_update["tx"].txhash))
-        #     else:
-        #         st.write("Nothing changed!")
-        #     status.update(
-        #         label=st.session_state.tx_update["status"],
-        #         state="complete",
-        #         expanded=True,
-        #     )
         # re-init
         st.session_state.tx_update = initial_tx_status()
 
@@ -228,52 +192,8 @@ if "update_cred_button" not in st.session_state:
 
 
 def click_update_cred(index):
-    """ my_cred_update = Cred(
-        name=name,
-        url=url,
-        email=email,
-        login=login,
-        password=password,
-        note=note,
-        share=share,
-    ) """
     st.session_state.update_index = index
-    # st.session_state.my_cred_update = my_cred_update
     st.session_state.update_cred_button = True
-
-
-# st.title("List credentials")
-# for i_row, cred in enumerate(list_cred):
-
-#     with st.popover(cred.name or cred.url):
-#         st.markdown("Details:")
-#         with st.form(key=f'update_cred_{i_row}'):
-#             my_cred_update = Cred.mock()
-#             my_cred_update.name = st.text_input("name", cred.name)
-#             my_cred_update.url = st.text_input("url", cred.url)
-#             my_cred_update.email = st.text_input("email", cred.email)
-#             my_cred_update.login = st.text_input("login", cred.login)
-#             my_cred_update.password = st.text_input(
-#                 "password", value=cred.password, type="password")
-#             my_cred_update.note = st.text_area("note", cred.note)
-#             my_cred_update.share = st.text_input("share", cred.share)
-
-#             update_cred_button = st.form_submit_button(
-#                 label="Update",
-#                 on_click=click_update_cred,
-#                 args=(i_row,),
-#             )
-#             # add a cancel button
-#             cancel_update_cred_button = st.form_submit_button(
-#                 label="Cancel",
-#                 type="primary",
-#             )
-# if cancel_update_cred_button:
-#     load_cred()
-# # Display Updating Cred
-# if st.session_state.update_cred_button:
-#     st.session_state.my_cred_update = my_cred_update
-#     update_cred(st.session_state.update_index, st.session_state.my_cred_update)
 
 
 def update_credential(index, my_cred):
@@ -292,8 +212,6 @@ def update_credential(index, my_cred):
             st.session_state.tx_add["index"] = index
             st.session_state.tx_add["my_cred_update"] = my_cred_update
             st.session_state.tx_update["update"] = True
-            # update_cred(index, my_cred_update)
-            # st.success("Credential updated to blockchain")
             st.rerun()
 
 
@@ -333,14 +251,8 @@ def click_add_cred():
 if st.session_state.get("expanded") is None:
     st.session_state.expanded = False
 
-# # add button close expander
-# if st.button("Close"):
-#     st.session_state.expanded = False
-#     st.rerun()
 
-# Add Cred Form to input information about your login creadentials
-
-
+# Add Cred Form to input information about your login credentials
 def display_add_cred():
     with st.expander(
         "Add credentials",
@@ -370,12 +282,7 @@ def display_add_cred():
             # add to session state cred_to_add
             st.session_state.cred_to_add = cred_to_add
             # add a button to save the credentials
-            # add_cred_button = st.form_submit_button(
-            #     label="Save",
-            #     on_click=click_add_cred,
-            # )
             if st.form_submit_button(label="Add", type="primary"):
-                # update_cred(index, my_cred_update)
                 st.session_state.tx_add["update"] = True
                 st.session_state.tx_add["cred_to_add"] = cred_to_add
                 if cred_to_add.isempty():
@@ -383,25 +290,11 @@ def display_add_cred():
                     st.session_state.tx_add["cred_to_add"] = None
                 else:
                     st.session_state.tx_add["cred_to_add"] = cred_to_add
-                    # add_cred(cred_to_add)
-                    # st.success("Credential Added to blockchain")
                 st.session_state.expanded = False
                 st.rerun()
 
 
 display_add_cred()
-
-# if "add_cred_button" not in st.session_state:
-#     st.session_state.add_cred_button = False
-
-# # Display Adding Cred
-# if st.session_state.add_cred_button:
-#     cred_to_add = st.session_state.cred_to_add
-#     if cred_to_add.name and cred_to_add.url and cred_to_add.login and cred_to_add.password:
-#         add_cred(cred_to_add)
-#     else:
-#         st.warning("All fields are not filled, Proceeding anyway...")
-#         add_cred(cred_to_add)
 
 
 st.caption("MIT license, Source: https://github.com/jeugregg/secret_pass_manager ")
