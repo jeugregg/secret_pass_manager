@@ -1,11 +1,17 @@
 """
 Streamlit App : Password Manager with Secret Network Blockchain
+- Use streamlit web app python framework
 DONE : 
     - interface
     - wallet display
+    - add first credential to the blockchain
+    - update first credential to the blockchain
+    - display all credentials from the blockchain
 TODO : 
-    - add password to the blockchain
-    - display passwords from the blockchain
+    - Add multi credentials to the blockchain
+    - Connect with Keplr wallet extension
+    - Create a new secret vault Button logic
+    - Connect vault button logic
 """
 import streamlit as st
 from secret_sdk.core import TxResultCode
@@ -15,15 +21,42 @@ from cred.cred import Cred
 
 @st.cache_resource
 def get_secret_client():
+    """
+    Initializes a Secret client using cached resources.
+
+    Returns:
+        Client: An instance of the Secret client.
+    """
     return Client(mode_update=False, mnemonic_phrase=st.secrets.MNEMONIC)
 
 
+def create_secret_client():
+    """
+    Create vault and Initialiez a Secret client using cached resources.
+
+    Returns:
+        Client: An instance of the Secret client.
+    """
+    client = Client(mode_update=True, mnemonic_phrase=st.secrets.MNEMONIC)
+    client.create_contract()
+    return client
+
+
 def get_balance():
+    """
+    Fetches and returns the current balance from the secret network.
+
+    Returns:
+        float: The current balance.
+    """
     balance = client.secret.bank.balance(client.wallet.key.acc_address)
     return balance
 
 
 def update_sidebar_balance():
+    """
+    Updates the sidebar with the current balance of the wallet.
+    """
     with st.spinner('Calculating balance...'):
         balance = get_balance()
     st.write(f"Balance: {balance[0]}")
@@ -33,7 +66,13 @@ def update_sidebar_balance():
 
 def add_cred(my_cred):
     """
-    add a Credential into the blockchain
+    Adds a credential to the blockchain.
+
+    Args:
+        my_cred (Cred): The credential object to be added.
+
+    Raises:
+        Exception: If adding the contract fails.
     """
     # prepare data to be sent to secret network contract using function add_cred
     with st.sidebar:
@@ -68,7 +107,14 @@ def add_cred(my_cred):
 
 def update_cred(index, my_cred):
     """
-    Update a Credential into the blockchain
+    Updates an existing credential on the blockchain.
+
+    Args:
+        index (int): The index of the credential to be updated.
+        my_cred (Cred): The new credential object to replace the old one.
+
+    Raises:
+        Exception: If updating the contract fails.
     """
     # prepare data to be sent to secret network contract using function add_cred
     with st.sidebar:
@@ -112,6 +158,15 @@ def update_cred(index, my_cred):
 
 
 def initial_tx_status():
+    """
+    Returns the initial state for a vault.
+
+    Returns:
+        dict: A dictionary containing the following keys:
+            - "update": False (a boolean indicating whether the vault needs to be updated)
+            - "status": "" (an empty string representing the status of the vault operation)
+            - "tx": None (None value indicating no transaction is associated with the vault operation)
+    """
     return {
         "update": False,
         "status": "",
@@ -121,6 +176,13 @@ def initial_tx_status():
 
 @st.dialog("Create a new Vault")
 def dialog_create_vault():
+    """
+    Dialog for creating a new empty Vault.
+
+    This function displays a confirmation dialog to the user asking whether they want to create an empty Vault.
+    If the user clicks "OK", it shows a warning indicating that the feature is not yet implemented.
+    If the user clicks "Cancel", it also shows a warning indicating that the feature is not yet implemented.
+    """
     st.markdown("**Create a new empty Vault ?**")
     if st.button("OK"):
         st.warning("Not implemented yet!")
@@ -174,13 +236,24 @@ with st.sidebar:
 
 # load data from BC
 def load_cred():
+    """
+    Loads credentials from the blockchain and stores them in session state.
+    """
     with st.spinner('Loading credentials...'):
-        list_cred = client.query_get_all()
-        st.session_state.list_cred = list_cred
+        try:
+            client = get_secret_client()
+            list_cred = client.query_get_all()
+            st.session_state.list_cred = list_cred
+        except:
+            creator = client.secret.wasm.contract_info(client.contract_address)[
+                "contract_info"]["creator"]
+            if client.wallet.key.acc_address != creator:
+                with st.spinner('Create new vault...'):
+                    client = create_secret_client()
+                    st.session_state.list_cred = []
 
 
 load_cred()
-
 
 if "list_cred" in st.session_state:
     list_cred = st.session_state.list_cred
@@ -192,6 +265,12 @@ if "update_cred_button" not in st.session_state:
 
 
 def click_update_cred(index):
+    """
+    Updates the session state with the selected credential index for updating.
+
+    Args:
+        index (int): The index of the credential to be updated.
+    """
     st.session_state.update_index = index
     st.session_state.update_cred_button = True
 
@@ -217,6 +296,15 @@ def update_credential(index, my_cred):
 
 @st.dialog("Update Credential")
 def dialog(my_cred):
+    """
+    Dialog function to update a credential.
+
+    Parameters:
+        my_cred (Credential): The credential object to be updated.
+
+    Returns:
+        None
+    """
     index = st.session_state.update_index
     update_credential(index, my_cred)
 
@@ -241,10 +329,13 @@ with st.container(border=True):
                     if st.button("Remove", key=f'remove_button_{i_row}'):
                         st.sidebar.warning("Not implemented yet!")
 
-
 # ADD CRED
 
+
 def click_add_cred():
+    """
+    Sets the session state flag to add a new credential.
+    """
     st.session_state.add_cred_button = True
 
 
@@ -254,6 +345,20 @@ if st.session_state.get("expanded") is None:
 
 # Add Cred Form to input information about your login credentials
 def display_add_cred():
+    """
+    Display a form to input and submit login credentials.
+
+    This function creates an expandable section in Streamlit where users can enter their login credentials,
+    including name, URL, email, login, password, note, and share details. Upon submitting the form,
+    the credentials are validated, stored in session state, and a flag is set to indicate that new credentials
+    need to be added.
+
+    Parameters:
+        None
+
+    Returns:
+        None
+    """
     with st.expander(
         "Add credentials",
         expanded=st.session_state.expanded,
@@ -295,6 +400,5 @@ def display_add_cred():
 
 
 display_add_cred()
-
 
 st.caption("MIT license, Source: https://github.com/jeugregg/secret_pass_manager ")
