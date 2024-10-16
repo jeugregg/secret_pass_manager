@@ -9,6 +9,9 @@ Password manager using Secret Network Blockchain
 
 This project was initiated during the Secret Network [HackSecret 4](https://dorahacks.io/hackathon/hacksecret4/detail) Hackathon by a data scientist without any knowlege in rust. Even the web UI is done with a python framework that I have never really used before.
 
+## Video demo
+- [Click here to watch](https://app.guidde.com/share/playbooks/2scuhL2Jtg1NrTvGkkSJRh)
+- [Have a look to the markdown guide](/docs/doc_video_guide.md)
 ## Demo on line 
 - Follow this [link on streamlit cloud](/docs/doc_streamlit_app.md#demo-on-line)
 
