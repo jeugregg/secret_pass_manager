@@ -132,6 +132,15 @@ def initial_tx_status():
     }
 
 
+@st.dialog("Create a new Vault")
+def dialog_create_vault():
+    st.markdown("**Create a new empty Vault ?**")
+    if st.button("OK"):
+        st.warning("Not implemented yet!")
+    if st.button("Cancel"):
+        st.warning("Not implemented yet!")
+
+
 if st.session_state.get("tx_add") is None:
     st.session_state.tx_add = initial_tx_status()
     # st.session_state.tx_add = dict()
@@ -142,19 +151,32 @@ if st.session_state.get("tx_add") is None:
 if st.session_state.get("tx_update") is None:
     st.session_state.tx_update = initial_tx_status()
 
-# siderbar
+# Sidebar
 with st.sidebar:
     st.title("Secret Password Manager")
     st.divider()
     # Connect to wallet
     client = get_secret_client()
-    str_print = f"**Your Wallet** : {client.wallet.key.acc_address}"
-    st.markdown(str_print)
+    st.markdown(f"**Your Wallet** : {client.wallet.key.acc_address}")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Connect Wallet"):
+            st.warning("Not implemented yet!")
+    with col2:
+        # add a button to check balance in sidebar
+        if st.button("Check Balance"):
+            update_sidebar_balance()
 
-    # add a button to check balance in sidebar
-    if st.button("Check Balance"):
-        update_sidebar_balance()
-    st.divider()
+    st.markdown(f"**Your Secret Vault** : {client.contract_address}")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Connect Vault"):
+            st.warning("Not implemented yet!")
+    with col2:
+        if st.button("Create"):
+            dialog_create_vault()
+
+    st.markdown(f"**Status**")
     # ADD check status
     if st.session_state.tx_add["update"]:
         add_cred(st.session_state.tx_add["cred_to_add"])
@@ -287,18 +309,19 @@ with st.container(border=True):
     for i_row, cred in enumerate(list_cred):
         with st.container(border=True):
             with st.container():
-                col1, col2 = st.columns([3, 1])
-
+                col1, col2, col3 = st.columns([4, 1, 1])
                 # Display credential details
                 with col1:
                     st.markdown(f"**Name**: {cred.name}")
                     st.markdown(f"**URL**: {cred.url}")
-
                 # Add button to update this credential
                 with col2:
                     if st.button("Edit", key=f'update_button_{i_row}'):
                         st.session_state.update_index = i_row
                         dialog(st.session_state.list_cred[i_row])
+                with col3:
+                    if st.button("Remove", key=f'remove_button_{i_row}'):
+                        st.sidebar.warning("Not implemented yet!")
 
 
 # ADD CRED

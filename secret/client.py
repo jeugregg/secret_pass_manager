@@ -3,13 +3,10 @@ import datetime
 import json
 import base64
 import copy
-# import sys
 from dotenv import load_dotenv
 from secret_sdk.core.wasm import MsgExecuteContract, MsgInstantiateContract, MsgStoreCode
 from secret_sdk.core import Coins, TxResultCode
 from secret_sdk.util.tx import get_value_from_raw_log
-# from secret_sdk.protobuf.cosmos.tx.v1beta1 import BroadcastMode
-# Import only used functions from secret_settings module
 from secret.secret_settings import get_client, PATH_WASM, PATH_INFO
 from secret.secret_settings import PERMIT_NAME, PATH_PERMIT, explorer_endpoint, faucet_endpoint
 from cred.cred import Cred
