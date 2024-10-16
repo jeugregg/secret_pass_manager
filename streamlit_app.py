@@ -37,7 +37,7 @@ def get_balance():
 def update_sidebar_balance():
     with st.spinner('Calculating balance...'):
         balance = get_balance()
-    st.write(f"Balance: {balance}")
+    st.write(f"Balance: {balance[0]}")
     st.session_state.balance = balance
 
 
@@ -141,7 +141,7 @@ with st.sidebar:
     st.divider()
     # Connect to wallet
     client = get_secret_client()
-    str_print = f"Wallet connected : {client.wallet.key.acc_address}"
+    str_print = f"**Your Wallet** : {client.wallet.key.acc_address}"
     st.markdown(str_print)
 
     # add a button to check balance in sidebar
