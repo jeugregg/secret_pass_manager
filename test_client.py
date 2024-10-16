@@ -119,7 +119,6 @@ class TestSecretConnect(unittest.TestCase):
         Asserts that the retrieved results are instances of Cred.
         """
         res = self.client.query_get_all()
-        cred_keys = Cred.mock().to_dict().keys()
         # Check if res is of type Cred
         assert isinstance(res[0], Cred)
 
