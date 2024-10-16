@@ -101,7 +101,7 @@ def update_cred(index, my_cred):
                     raise Exception(f"Failed MsgExecuteContract: {tx_execute.rawlog}")
                 assert tx_execute.code == TxResultCode.Success.value
                 st.success("Credential updated to blockchain")
-                status.update(label="Credential updated!", state="complete", expanded=False)
+                status.update(label="Credential updated!", state="complete", expanded=True)
                 st.session_state.list_cred[index] = my_cred
                 # status
                 st.session_state.tx_update["update"] = True
@@ -110,10 +110,16 @@ def update_cred(index, my_cred):
 
             else:
                 st.warning("Nothing to Update!")
-                status.update(label="Nothing to Update!", state="complete", expanded=False)
+                status.update(label="Nothing to Update!", state="complete", expanded=True)
                 st.session_state.tx_update["update"] = True
                 st.session_state.tx_update["status"] = "Nothing to Update!"
                 st.session_state.tx_update["tx"] = None
+
+            status.update(
+                label=st.session_state.tx_update["status"],
+                state="complete",
+                expanded=True,
+            )
 
 # init status
 
@@ -166,16 +172,16 @@ with st.sidebar:
     elif st.session_state.tx_update["update"]:
         update_cred(st.session_state.tx_add["index"], st.session_state.tx_add["my_cred_update"])
         # st.success("Credential updated to blockchain")
-        with st.status("Last Tx") as status:
-            if st.session_state.tx_update["tx"] is not None:
-                st.write(Client.get_url_tx(st.session_state.tx_update["tx"].txhash))
-            else:
-                st.write("Nothing changed!")
-            status.update(
-                label=st.session_state.tx_update["status"],
-                state="complete",
-                expanded=True,
-            )
+        # with st.status("Last Tx") as status:
+        #     if st.session_state.tx_update["tx"] is not None:
+        #         st.write(Client.get_url_tx(st.session_state.tx_update["tx"].txhash))
+        #     else:
+        #         st.write("Nothing changed!")
+        #     status.update(
+        #         label=st.session_state.tx_update["status"],
+        #         state="complete",
+        #         expanded=True,
+        #     )
         # re-init
         st.session_state.tx_update = initial_tx_status()
 
