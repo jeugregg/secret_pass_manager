@@ -54,7 +54,7 @@ pytz==2024.2
 requests==2.32.3
 rich==13.8.1
 rpds-py==0.20.0
-secret-sdk==1.7.1
+secret-sdk==1.8.1
 setuptools==72.1.0
 six==1.16.0
 smmap==5.0.1
