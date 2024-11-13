@@ -54,7 +54,7 @@ pytz==2024.2
 requests==2.32.3
 rich==13.8.1
 rpds-py==0.20.0
-secret-sdk==1.8.1
+git+https://github.com/scrtlabs/secret-sdk-python.git@main
 setuptools==72.1.0
 six==1.16.0
 smmap==5.0.1
