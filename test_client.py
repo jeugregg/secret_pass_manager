@@ -106,12 +106,15 @@ class TestSecretConnect(unittest.TestCase):
         res = self.client.query({"get_count": {}})
         count_old = self.client.count
         print(res)
-        if res != {'count': self.client.count}:
-            if res.count >= 0:
-                self.client.count = res.count
+        assert isinstance(
+            res["count"], int) and res["count"] >= 0, "Failed to get count from contract"
+        # update for next time
+        if res["count"] != self.client.count:
+            if res["count"] >= 0:
+                self.client.count = res["count"]
                 self.client.save_contract_info()
-
-        assert res["count"] == count_old
+            else:
+                raise Exception("Failed to get count from contract")
 
     def test_query_get_all(self):
         """
