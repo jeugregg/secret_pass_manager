@@ -1,4 +1,5 @@
 import os
+import time
 import datetime
 import json
 import base64
@@ -6,13 +7,14 @@ import copy
 from dotenv import load_dotenv
 from secret_sdk.core.wasm import MsgExecuteContract, MsgInstantiateContract, MsgStoreCode
 from secret_sdk.core import Coins, TxResultCode
-from secret_sdk.util.tx import get_value_from_raw_log
+from secret_sdk.util.tx import get_value_from_events
+from secret_sdk.protobuf.cosmos.tx.v1beta1 import BroadcastMode
+from secret_sdk.exceptions import LCDResponseError
 from secret.secret_settings import get_client, PATH_WASM, PATH_INFO
 from secret.secret_settings import PERMIT_NAME, PATH_PERMIT, explorer_endpoint, faucet_endpoint
 from cred.cred import Cred
 load_dotenv()
 MNEMONIC_PHRASE = os.getenv('MNEMONIC')
-
 
 class Client():
     """
@@ -35,6 +37,61 @@ class Client():
         else:
             self.load_contract_info()
         self.balance = None
+
+    def create_and_broadcast_tx(self, msgs, gas=None, gas_prices=None):
+        """
+        Creates and broadcasts a transaction to the network, returns the broadcast receipt
+        Args:
+            msgs: msgs to be sent
+
+        Returns:
+                the receipt of the broadcast transaction
+
+        """
+        max_retries = 20
+        wait_interval = 3
+        max_broadcast_attempts = 3  # Number of times to retry the entire broadcast process
+        broadcast_attempt = 0
+
+        while broadcast_attempt < max_broadcast_attempts:
+            try:
+                # Broadcast the transaction in SYNC mode
+                final_tx = self.wallet.create_and_broadcast_tx(msgs, gas=gas, gas_prices=gas_prices, broadcast_mode=BroadcastMode.BROADCAST_MODE_SYNC)
+                tx_hash = final_tx.txhash
+                print(f"Transaction broadcasted with hash: {tx_hash}")
+
+                # Repeatedly fetch the transaction result until it's included in a block
+                for attempt in range(max_retries):
+                    try:
+                        tx_result = self.wallet.lcd.tx.tx_info(tx_hash)
+                        if tx_result:
+                            print(f"Transaction included in block: {tx_result.height}")
+                            return tx_result  # Exit function if transaction is successfully included in a block
+                    except LCDResponseError as e:
+                        if 'not found' in str(e).lower():
+                            # Transaction not yet found, wait and retry
+                            print(f"Transaction not found, retrying... ({attempt + 1}/{max_retries})")
+                            time.sleep(wait_interval)
+                            continue
+                        else:
+                            print(f"LCDResponseError while fetching tx result: {e}")
+                            raise e
+                    except Exception as e:
+                        print(f"Unexpected error while fetching tx result: {e}")
+                        raise e
+                # If max_retries are exceeded and no result is found, retry broadcasting
+                print(
+                    f"Transaction {tx_hash} not included in a block after {max_retries} retries. Retrying broadcast... ({broadcast_attempt + 1}/{max_broadcast_attempts})")
+
+            except LCDResponseError as e:
+                print(f"LCDResponseError during transaction broadcast: {e}")
+                raise e
+            except Exception as e:
+                print(f"An unexpected error occurred during transaction broadcast: {e}")
+                raise e
+
+            # Increment the broadcast attempt counter
+            broadcast_attempt += 1
 
     def reset(self):
         """
@@ -84,12 +141,10 @@ class Client():
             source="",
             builder="",
         )
-        tx_store = self.wallet.create_and_broadcast_tx(
-            [msg_store_code], gas='4000000', gas_prices=Coins('0.25uscrt'))
+        tx_store = self.create_and_broadcast_tx([msg_store_code], gas='4000000', gas_prices=Coins('0.25uscrt'))
         if tx_store.code != TxResultCode.Success.value:
             raise Exception(f"Failed MsgStoreCode: {tx_store.rawlog}")
-        assert tx_store.code == TxResultCode.Success.value
-        self.code_id = int(get_value_from_raw_log(tx_store.rawlog, 'message.code_id'))
+        self.code_id = int(get_value_from_events(tx_store.events, 'message.code_id'))
         code_info = self.secret.wasm.code_info(self.code_id)
         self.code_hash = code_info['code_info']['code_hash']
         print(f"Stored code with ID: {self.code_id}")
@@ -115,7 +170,7 @@ class Client():
         )
 
         # Instantiate contract : Send tx
-        tx_init = self.wallet.create_and_broadcast_tx(
+        tx_init = self.create_and_broadcast_tx(
             [msg_init],
             gas='5000000',
             gas_prices=Coins('0.25uscrt')
@@ -123,11 +178,9 @@ class Client():
         # instantiate : Check tx output
         if tx_init.code != TxResultCode.Success.value:
             raise Exception(f"Failed MsgInstiateContract: {tx_init.rawlog}")
-        assert tx_init.code == TxResultCode.Success.value
-        assert get_value_from_raw_log(
-            tx_init.rawlog, 'message.action') == "/secret.compute.v1beta1.MsgInstantiateContract"
-        self.contract_address = get_value_from_raw_log(tx_init.rawlog, 'message.contract_address')
-        assert self.contract_address == tx_init.data[0].address  # Check address
+        assert get_value_from_events(
+            tx_init.events, 'message.action') == "/secret.compute.v1beta1.MsgInstantiateContract"
+        self.contract_address = get_value_from_events(tx_init.events, 'message.contract_address')
         return tx_init
 
     def create_contract(self):
@@ -198,7 +251,7 @@ class Client():
             encryption_utils=self.secret.encrypt_utils,
         )
         # Execute increment : Send tx
-        tx_execute = self.wallet.create_and_broadcast_tx(
+        tx_execute = self.create_and_broadcast_tx(
             [msg_execute],
             gas='5000000',
             gas_prices=Coins('0.25uscrt'),
