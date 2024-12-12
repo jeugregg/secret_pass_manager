@@ -16,6 +16,7 @@ from cred.cred import Cred
 load_dotenv()
 MNEMONIC_PHRASE = os.getenv('MNEMONIC')
 
+
 class Client():
     """
     A client class used to interact with a blockchain wallet using a mnemonic phrase.
@@ -56,7 +57,8 @@ class Client():
         while broadcast_attempt < max_broadcast_attempts:
             try:
                 # Broadcast the transaction in SYNC mode
-                final_tx = self.wallet.create_and_broadcast_tx(msgs, gas=gas, gas_prices=gas_prices, broadcast_mode=BroadcastMode.BROADCAST_MODE_SYNC)
+                final_tx = self.wallet.create_and_broadcast_tx(
+                    msgs, gas=gas, gas_prices=gas_prices, broadcast_mode=BroadcastMode.BROADCAST_MODE_SYNC)
                 tx_hash = final_tx.txhash
                 print(f"Transaction broadcasted with hash: {tx_hash}")
 
@@ -70,7 +72,8 @@ class Client():
                     except LCDResponseError as e:
                         if 'not found' in str(e).lower():
                             # Transaction not yet found, wait and retry
-                            print(f"Transaction not found, retrying... ({attempt + 1}/{max_retries})")
+                            print(f"Transaction not found, retrying... ({
+                                  attempt + 1}/{max_retries})")
                             time.sleep(wait_interval)
                             continue
                         else:
@@ -141,7 +144,8 @@ class Client():
             source="",
             builder="",
         )
-        tx_store = self.create_and_broadcast_tx([msg_store_code], gas='4000000', gas_prices=Coins('0.25uscrt'))
+        tx_store = self.create_and_broadcast_tx(
+            [msg_store_code], gas='4000000', gas_prices=Coins('0.25uscrt'))
         if tx_store.code != TxResultCode.Success.value:
             raise Exception(f"Failed MsgStoreCode: {tx_store.rawlog}")
         self.code_id = int(get_value_from_events(tx_store.events, 'message.code_id'))
@@ -214,7 +218,7 @@ class Client():
             encryption_utils=self.secret.encrypt_utils,
         )
         # Execute increment : Send tx
-        tx_execute = self.wallet.create_and_broadcast_tx(
+        tx_execute = self.create_and_broadcast_tx(
             [msg_execute],
             gas='5000000',
             gas_prices=Coins('0.25uscrt'),
